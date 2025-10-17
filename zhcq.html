@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <!-- ...existing code... -->
+    <style>
+    /* ...existing code... */
+
+        /* 隐藏排除名单输入（页面不显示，但脚本仍可读取） */
+        label[for="excludeInput"],
+        #excludeInput {
+            display: none !important;
+        }
+
+        /* 使输入区域和结果区域宽度严格一致 */
+        .input-group,
+        .result-box {
+            width: 100%;
+            max-width: 900px;
+            box-sizing: border-box; /* 包含 padding 和 border 在内 */
+            align-self: center;
+        }
+
+        /* 子控件也使用 border-box，避免内边距导致视觉差异 */
+        textarea,
+        input[type="number"],
+        .result-box {
+            box-sizing: border-box;
+        }
+/* ...existing code... */
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邢影不离课题组会随机抽签</title>
+    <style>
+        /* 1. 基础样式和 1920x1080 居中容器 */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 1200px;
+            max-width: 90vw;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            align-self: flex-start; 
+        }
+
+        /* 修复输入框和文本域的对齐问题，并设置固定宽度 */
+        textarea, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            align-self: flex-start;
+            overflow: hidden; /* 隐藏滚动条，改用自动撑高 */
+            min-height: 10px; /* 作为降级方案，可调整 */
+            resize: vertical;  /* 允许用户垂直调整高度 */
+        }
+
+        .input-group {
+            width: 100%;
+            max-width: 1000px; /* 限制输入区域最大宽度，使所有输入控件宽度一致 */
+            /* 确保 input-group 本身在 .container 中是居中的，但内部元素是靠左对齐的 */
+            align-self: center;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 0 10px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #1e7e34;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* 2. 抽取结果界面 */
+.result-box {
+            margin-top: 5px;
+            padding: 20px;
+            width: 100%;
+            /* ********** 保持和 .input-group 相同的最大宽度 ********** */
+            max-width: 1000px; 
+            min-height: 150px;
+            /* 虚线边框和 2px 宽度 */
+            border: 2px dashed #0056b3; 
+            border-radius: 10px;
+            background-color: #e9f5ff;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .result-box h2 {
+            color: #0056b3;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .selected-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .selected-list li {
+            font-size: 2.5em; 
+            /* 名字改为醒目的蓝色 */
+            color: #007bff; 
+            font-weight: bold;
+            padding: 5px 0;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>“邢影不离”课题组 组会随机抽签</h1>
+
+        <div class="input-group">
+            <label for="namesTable">输入所有组员姓名：</label>
+            <div id="namesTableContainer" style="width:100%; max-width:1000px; margin-bottom:15px;">
+                <div style="max-height:none; border:1px solid #ccc; border-radius:5px; background:#fff; overflow:visible; padding:6px;">
+                    <table id="namesTable" style="width:100%; border-collapse:collapse; table-layout:fixed;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                                <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div style="margin-top:8px; display:none;">
+                    <button type="button" onclick="addEmptyRow()">添加一行（8 列）</button>
+                    <button type="button" onclick="removeEmptyRows()" style="margin-left:8px;">移除空行</button>
+                </div>
+            </div>
+
+            <!-- 隐藏的 textarea 保留用于兼容原有解析逻辑 -->
+            <textarea id="namesInput" style="display:none;">
+杨舒涵 陈媛媛 吉菠	韩继成	高菲 高源汇 王新月	黄悦佳 黄琴 蔡其君	徐云龙	仲慧 万炎森 周一舟 江荣坤 王梦鸽 赵雨欣 李睿 郝庆翔 胡明律 汤瑞 赖丽婷 丁宇昊 丽丽 李维康 戴怡珑	孙冰洁 孙娇凡 倪诗莹 于士博 王文豪 宦东明 李蔷 陆从昊 李牧遥 何文太 李振良 刘佳琰 张颖 蔡方磊 韩笑铮 李明鸿 翟浩然 刘松语 沈哲彬 姚焕地	张炜业 周科 吴浩燃	李玉龙 张千禧 邓心悦 张文康 王筱琪 杨欣雨 陆雪崟 崔恒杰 李逸川 张颖 冯潇晴 宋晴晴 杨琦琦 段鹏俊 梁政 周方骐 温新 王童超 丛文杰 宋彧奇 徐祥森	
+            </textarea>
+
+            <!-- 新增：排除名单输入 -->
+            <label for="excludeInput">排除名单（可选，逗号/换行/空格分隔）：</label>
+            <input type="text" id="excludeInput" value="何文太" placeholder="输入要排除的姓名，如：张三," style="width:100%;padding:10px;margin-bottom:15px;box-sizing:border-box;"/>
+
+            <label for="numToDraw">抽取人数（1-100）：</label>
+            <input type="number" id="numToDraw" min="1" max="100" value="1">
+        </div>
+        
+        <div class="button-group">
+            <button onclick="drawNames()">随机抽取</button>
+            <button style="background-color: #0056b3;" onclick="resetDrawing()">重置抽签</button>
+        </div>
+
+        <p class="error" id="errorMessage"></p>
+
+        <div class="result-box">
+            <h2>本轮抽取结果</h2>
+            <ul id="currentDrawResult" class="selected-list">
+                <li>（点击抽取按钮开始）</li>
+            </ul>
+        </div>
+        
+    </div>
+
+    <script>
+        // 存储所有组员姓名（用于重置和验证）
+        let allNames = [];
+        // 存储已经被抽中的姓名，用于**内部排除**
+        let drawnNamesHistory = new Set();
+        // 存储本轮未被抽取的姓名，作为下一轮抽取的候选人
+        let candidatesForNextRound = [];
+        // 表格列数（必须定义，namesToTable 使用）
+        const TABLE_COLS = 8;
+
+        /**
+         * 辅助函数：解析输入的姓名文本
+         */
+        function parseNames(text) {
+            let names = text.split(/[\n,，\s]+/).map(name => name.trim()).filter(name => name.length > 0);
+            return [...new Set(names)]; // 使用 Set 去重
+        }
+
+        /**
+         * Fisher-Yates (Knuth) 洗牌算法
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * 抽取姓名函数
+         */
+        function drawNames() {
+            tableToNames(); // 同步表格内容到隐藏 textarea（保证 parseNames 使用最新数据）
+            const namesInput = document.getElementById('namesInput').value;
+            const numToDraw = parseInt(document.getElementById('numToDraw').value);
+            const errorMessage = document.getElementById('errorMessage');
+            const currentDrawList = document.getElementById('currentDrawResult');
+            const excludeInput = document.getElementById('excludeInput').value; // 获取排除名单
+
+            errorMessage.textContent = '';
+            currentDrawList.innerHTML = '<li>抽取中...</li>';
+
+            // 1. 获取所有组员姓名（现在基于隐藏 textarea）
+            allNames = parseNames(namesInput);
+            
+            // 2. 确定本轮候选人
+            if (candidatesForNextRound.length === 0) {
+                // 如果所有人都被抽取了一轮，则重置历史记录
+                if (drawnNamesHistory.size === allNames.length && allNames.length > 0) {
+                    resetDrawingInternal();
+                    errorMessage.textContent = '提示：所有组员都已被抽取至少一轮，已自动重置抽签历史。';
+                }
+                candidatesForNextRound = allNames.filter(name => !drawnNamesHistory.has(name));
+            }
+
+            // 3. 验证
+            if (numToDraw < 1 || numToDraw > 100 || isNaN(numToDraw)) {
+                errorMessage.textContent = '错误：抽取人数必须在 1 到 100 之间。';
+                currentDrawList.innerHTML = '<li>（抽取失败）</li>';
+                return;
+            }
+            
+            if (candidatesForNextRound.length === 0) {
+                errorMessage.textContent = '错误：当前候选人名单为空，请检查输入姓名。';
+                currentDrawList.innerHTML = '<li>（抽取失败）</li>';
+                return;
+            }
+            
+            // 处理排除名单
+            let excludeNames = new Set(parseNames(excludeInput));
+            // 从候选人中排除指定的姓名
+            candidatesForNextRound = candidatesForNextRound.filter(name => !excludeNames.has(name));
+
+            let drawn;
+            if (numToDraw > candidatesForNextRound.length) {
+                errorMessage.textContent = `警告：您要求抽取 ${numToDraw} 人，但当前候选人仅剩 ${candidatesForNextRound.length} 人。已抽取所有剩余候选人。`;
+                drawn = candidatesForNextRound.slice();
+                candidatesForNextRound = []; 
+            } else {
+                // 4. 洗牌和抽取
+                shuffleArray(candidatesForNextRound);
+                drawn = candidatesForNextRound.splice(0, numToDraw); 
+            }
+            
+            // 5. 更新历史记录
+            drawn.forEach(name => drawnNamesHistory.add(name));
+
+            // 6. 显示结果 
+            const resultText = drawn.join('、');
+            currentDrawList.innerHTML = `<li>${resultText}</li>`;
+            
+            // 如果候选人列表清空，给出重置提示
+            if (candidatesForNextRound.length === 0 && drawnNamesHistory.size === allNames.length) {
+                 errorMessage.textContent = '所有人都已被抽取至少一轮。请点击“重置抽签历史”开始新一轮循环！';
+            }
+        }
+
+        /**
+         * 内部重置逻辑（不更改界面显示，用于自动循环）
+         */
+        function resetDrawingInternal() {
+            drawnNamesHistory.clear();
+            allNames = parseNames(document.getElementById('namesInput').value);
+            candidatesForNextRound = allNames.slice();
+        }
+
+        /**
+         * 外部重置函数（更改界面显示，用户主动操作）
+         */
+        function resetDrawing() {
+            resetDrawingInternal();
+            document.getElementById('currentDrawResult').innerHTML = '<li>（抽签历史已重置）</li>';
+            document.getElementById('errorMessage').textContent = ''; // 不显示“已成功重置所有抽签历史记录。”
+        }
+
+        // 自动根据内容调整 textarea 高度
+        function autoResizeTextarea(el) {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        // 将隐藏 textarea 的内容加载到表格
+        function namesToTable() {
+            const txt = document.getElementById('namesInput').value || '';
+            const names = parseNames(txt);
+            const tbody = document.querySelector('#namesTable tbody');
+            tbody.innerHTML = '';
+
+            const rows = Math.max(1, Math.ceil(names.length / TABLE_COLS));
+            for (let r = 0; r < rows; r++) {
+                const tr = document.createElement('tr');
+                let cellsHtml = '';
+                for (let c = 0; c < TABLE_COLS; c++) {
+                    const idx = r * TABLE_COLS + c;
+                    const val = names[idx] || '';
+                    cellsHtml += `<td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="${val.replace(/"/g,'&quot;')}" style="width:100%; border:none; outline:none; background:transparent;" />
+                                  </td>`;
+                }
+                tr.innerHTML = cellsHtml;
+                tbody.appendChild(tr);
+            }
+
+            attachTableListeners();
+        }
+
+        // 把表格内容写回隐藏 textarea（行优先，去除空值）
+        function tableToNames() {
+            const inputs = Array.from(document.querySelectorAll('#namesTable .name-cell'));
+            const names = inputs.map(i => i.value.trim()).filter(s => s.length > 0);
+            document.getElementById('namesInput').value = names.join('\n');
+            return names;
+        }
+
+        function attachTableListeners() {
+            const inputs = document.querySelectorAll('#namesTable .name-cell');
+            inputs.forEach(inp => {
+                inp.removeEventListener('input', onTableInput);
+                inp.addEventListener('input', onTableInput);
+            });
+        }
+
+        function onTableInput() {
+            tableToNames();
+        }
+
+        // 添加一整行（8 个空单元格）
+        function addEmptyRow() {
+            const tbody = document.querySelector('#namesTable tbody');
+            const tr = document.createElement('tr');
+            let cellsHtml = '';
+            for (let c = 0; c < TABLE_COLS; c++) {
+                cellsHtml += `<td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                <input class="name-cell" value="" style="width:100%; border:none; outline:none; background:transparent;" />
+                              </td>`;
+            }
+            tr.innerHTML = cellsHtml;
+            tbody.appendChild(tr);
+            attachTableListeners();
+        }
+
+        // 移除所有空行（行内所有单元均为空才移除）
+        function removeEmptyRows() {
+            const rows = Array.from(document.querySelectorAll('#namesTable tbody tr'));
+            rows.forEach((tr) => {
+                const inputs = Array.from(tr.querySelectorAll('.name-cell'));
+                const allEmpty = inputs.every(i => !i.value.trim());
+                if (allEmpty) tr.remove();
+            });
+            tableToNames();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化：把隐藏 textarea 数据加载到表格并执行原有 init
+            namesToTable();
+            resetDrawing();
+
+            // 如果需要仍保留自动调整隐藏 textarea 高度（对兼容无影响）
+            const ta = document.getElementById('namesInput');
+            if (ta) autoResizeTextarea(ta);
+        });
+    </script>
+</body>
+</html>
