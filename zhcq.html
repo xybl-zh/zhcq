@@ -5,32 +5,73 @@
     <style>
     /* ...existing code... */
 
-        /* 隐藏排除名单输入（页面不显示，但脚本仍可读取） */
+        /* 隐藏排除名单（不在页面显示，但保留逻辑） */
         label[for="excludeInput"],
         #excludeInput {
             display: none !important;
         }
 
-        /* 使输入区域和结果区域宽度严格一致 */
-        .input-group,
-        .result-box {
-            width: 100%;
-            max-width: 900px;
-            box-sizing: border-box; /* 包含 padding 和 border 在内 */
-            align-self: center;
+        /* 强制浅色主题与白色背景（覆盖客户端/系统主题） */
+        :root { color-scheme: light; }
+        html, body { background-color: #ffffff !important; color: #222 !important; }
+        .container { background: #fff !important; }
+
+        /* 老虎机/结果行显示：使最终名字尽量在同一行，超出时换行到下一行 */
+        .selected-list {
+            display: flex;
+            flex-wrap: wrap;           /* 超出时换行到下一行 */
+            justify-content: center;   /* 居中排列 */
+            align-items: center;
+            gap: 0;                    /* 使用 ::after 添加固定两个空格 */
+            padding: 0;
+            margin: 0;
         }
 
-        /* 子控件也使用 border-box，避免内边距导致视觉差异 */
-        textarea,
-        input[type="number"],
-        .result-box {
-            box-sizing: border-box;
+        .selected-list li {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 4px 0;
+            font-size: 1.6em;          /* 可按需调整最终名字字号 */
+            color: #007bff;
+            font-weight: 700;
+            white-space: nowrap;       /* 名字本身不换行 */
         }
-/* ...existing code... */
+
+        /* 在每个条目后添加两个不间断空格，最后一个不添加 */
+        .selected-list li.slot::after {
+            content: "\00a0\00a0\00a0\00a0";     /* 两个 NBSP，等同于“两个字符的空格” */
+        }
+        .selected-list li.slot:last-child::after {
+            content: "";
+        }
+
+        /* 保持动画中滚轴文本样式（span.reel）与最终名字对齐 */
+        .slot .reel {
+            display: inline-block;
+            font-size: 1.0em;          /* 滚动时的小字号（不影响 li 的显示） */
+            line-height: 1.0em;
+            padding: 0 8px;
+            color: inherit;
+            font-weight: 700;
+        }
+
+        /* 最终结果高亮（保持字号与父 li 一致） */
+        .selected-final {
+            color: #007bff;
+            text-shadow: 0 2px 8px rgba(0,86,179,0.12);
+            animation: pulse 0s infinite;
+            font-size: inherit;
+        }
+
+        /* 其它原有样式保持 */
+        /* ...existing code... */
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>"邢影不离"课题组 组会随机抽签</title>
+    <title>邢影不离课题组会随机抽签</title>
     <style>
         /* 1. 基础样式和 1920x1080 居中容器 */
         body {
@@ -124,7 +165,7 @@
         /* 2. 抽取结果界面 */
 .result-box {
             margin-top: 5px;
-            padding: 20px;
+            padding: 10px;
             width: 100%;
             /* ********** 保持和 .input-group 相同的最大宽度 ********** */
             max-width: 1000px; 
@@ -141,13 +182,14 @@
         .result-box h2 {
             color: #0056b3;
             margin-top: 0;
-            margin-bottom: 15px;
+            margin-bottom: 20px;  /* 减小标题底部间隙，避免 margin 变化影响布局 */
             font-size: 1.5em;
         }
 
         .selected-list {
             list-style: none;
             padding: 0;
+            min-height: 2.2em;     /* 与单行 li 高度一致 */
         }
 
         .selected-list li {
@@ -157,6 +199,8 @@
             font-weight: bold;
             padding: 5px 0;
             animation: pulse 1.5s infinite;
+            display: inline-flex;
+            align-items: center;
         }
         
         @keyframes pulse {
@@ -170,6 +214,21 @@
             font-weight: bold;
             margin-top: 15px;
         }
+
+        /* 保证占位滚轴和最终名字字号一致，避免首帧变大推移 */
+.selected-list li,
+.selected-list li .reel {
+  font-size: 1.6em;      /* 与最终名字一致 */
+  line-height: 1;        /* 控制行高 */
+  height: 2.2em;         /* 固定高度，防止高度跳变 */
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 如果你允许多名同时显示，按行留出空间（可选） */
+.result-box { 
+  min-height: 170px;     /* 保持整个结果区域高度稳定（你已有 150，可视需要微调） */
+}
     </style>
 </head>
 <body>
@@ -193,7 +252,242 @@
                                 <th style="text-align:left; border-bottom:1px solid #ddd; width:12.5%;"></th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="杨舒涵" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="陈媛媛" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="吉菠" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="韩继成" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="高菲" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="高源汇" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="王新月" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="黄悦佳" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="黄琴" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="蔡其君" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="徐云龙" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="仲慧" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="万炎森" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="周一舟" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="江荣坤" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="王梦鸽" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="赵雨欣" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李睿" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="郝庆翔" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="胡明律" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="汤瑞" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="赖丽婷" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="丁宇昊" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="丽丽" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李维康" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="戴怡珑" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="孙冰洁" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="孙娇凡" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="倪诗莹" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="于士博" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="王文豪" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="宦东明" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李蔷" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="陆从昊" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李牧遥" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="何文太" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李振良" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="刘佳琰" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="张颖" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="蔡方磊" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="韩笑铮" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李明鸿" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="翟浩然" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="刘松语" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="沈哲彬" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="姚焕地" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="张炜业" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="周科" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="吴浩燃" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李玉龙" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="张千禧" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="邓心悦" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="张文康" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="王筱琪" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="杨欣雨" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="陆雪崟" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="崔恒杰" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="李逸川" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="张颖" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="冯潇晴" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="宋晴晴" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="杨琦琦" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="段鹏俊" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="梁政" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="周方骐" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="温新" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="王童超" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="丛文杰" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="宋彧奇" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="徐祥森" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                                <td style="padding:6px; border-bottom:1px solid #f0f0f0; vertical-align:top;">
+                                    <input class="name-cell" value="" style="width:100%; border:none; outline:none; background:transparent;" />
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
                 <div style="margin-top:8px; display:none;">
@@ -209,7 +503,7 @@
 
             <!-- 新增：排除名单输入 -->
             <label for="excludeInput">排除名单（可选，逗号/换行/空格分隔）：</label>
-            <input type="text" id="excludeInput" value="何文太" placeholder="输入要排除的姓名，如：张三," style="width:100%;padding:10px;margin-bottom:15px;box-sizing:border-box;"/>
+            <input type="text" id="excludeInput" value="李四" placeholder="输入要排除的姓名，如：张三," style="width:100%;padding:10px;margin-bottom:15px;box-sizing:border-box;"/>
 
             <label for="numToDraw">抽取人数（1-100）：</label>
             <input type="number" id="numToDraw" min="1" max="100" value="1">
@@ -225,7 +519,7 @@
         <div class="result-box">
             <h2>本轮抽取结果</h2>
             <ul id="currentDrawResult" class="selected-list">
-                <li>（点击抽取按钮开始）</li>
+                <li class="slot"><span class="reel">（点击抽取按钮开始）</span></li>
             </ul>
         </div>
         
@@ -260,7 +554,7 @@
         }
 
         /**
-         * 抽取姓名函数
+         * 抽取姓名函数（带老虎机滚动动画）
          */
         function drawNames() {
             tableToNames(); // 同步表格内容到隐藏 textarea（保证 parseNames 使用最新数据）
@@ -268,17 +562,14 @@
             const numToDraw = parseInt(document.getElementById('numToDraw').value);
             const errorMessage = document.getElementById('errorMessage');
             const currentDrawList = document.getElementById('currentDrawResult');
-            const excludeInput = document.getElementById('excludeInput').value; // 获取排除名单
+            const excludeInput = document.getElementById('excludeInput').value; // 虽然隐藏，但逻辑保留
 
             errorMessage.textContent = '';
-            currentDrawList.innerHTML = '<li>抽取中...</li>';
+            currentDrawList.innerHTML = '';
 
-            // 1. 获取所有组员姓名（现在基于隐藏 textarea）
             allNames = parseNames(namesInput);
-            
-            // 2. 确定本轮候选人
+
             if (candidatesForNextRound.length === 0) {
-                // 如果所有人都被抽取了一轮，则重置历史记录
                 if (drawnNamesHistory.size === allNames.length && allNames.length > 0) {
                     resetDrawingInternal();
                     errorMessage.textContent = '提示：所有组员都已被抽取至少一轮，已自动重置抽签历史。';
@@ -286,43 +577,82 @@
                 candidatesForNextRound = allNames.filter(name => !drawnNamesHistory.has(name));
             }
 
-            // 3. 验证
-            if (numToDraw < 1 || numToDraw > 100 || isNaN(numToDraw)) {
+            if (isNaN(numToDraw) || numToDraw < 1 || numToDraw > 100) {
                 errorMessage.textContent = '错误：抽取人数必须在 1 到 100 之间。';
                 currentDrawList.innerHTML = '<li>（抽取失败）</li>';
                 return;
             }
-            
             if (candidatesForNextRound.length === 0) {
                 errorMessage.textContent = '错误：当前候选人名单为空，请检查输入姓名。';
                 currentDrawList.innerHTML = '<li>（抽取失败）</li>';
                 return;
             }
-            
-            // 处理排除名单
+
             let excludeNames = new Set(parseNames(excludeInput));
-            // 从候选人中排除指定的姓名
-            candidatesForNextRound = candidatesForNextRound.filter(name => !excludeNames.has(name));
+            let workingCandidates = candidatesForNextRound.filter(name => !excludeNames.has(name));
+
+            if (workingCandidates.length === 0) {
+                errorMessage.textContent = '错误：排除名单把所有候选人都排除了。';
+                currentDrawList.innerHTML = '<li>（抽取失败）</li>';
+                return;
+            }
 
             let drawn;
-            if (numToDraw > candidatesForNextRound.length) {
-                errorMessage.textContent = `警告：您要求抽取 ${numToDraw} 人，但当前候选人仅剩 ${candidatesForNextRound.length} 人。已抽取所有剩余候选人。`;
-                drawn = candidatesForNextRound.slice();
-                candidatesForNextRound = []; 
+            if (numToDraw > workingCandidates.length) {
+                errorMessage.textContent = `警告：要求抽取 ${numToDraw} 人，但当前候选仅剩 ${workingCandidates.length} 人。已抽取所有剩余候选人。`;
+                drawn = workingCandidates.slice();
+                candidatesForNextRound = [];
             } else {
-                // 4. 洗牌和抽取
-                shuffleArray(candidatesForNextRound);
-                drawn = candidatesForNextRound.splice(0, numToDraw); 
+                shuffleArray(workingCandidates);
+                drawn = workingCandidates.splice(0, numToDraw);
+                candidatesForNextRound = candidatesForNextRound.filter(n => !drawn.includes(n));
             }
-            
-            // 5. 更新历史记录
+
+            // 创建插槽（li.slot），并立即填入一个随机名字（避免首帧空白/停顿感）
+            drawn.forEach((_, idx) => {
+                const li = document.createElement('li');
+                li.className = 'slot';
+                const span = document.createElement('span');
+                span.className = 'reel';
+                span.textContent = allNames.length ? allNames[Math.floor(Math.random()*allNames.length)] : '—';
+                li.appendChild(span);
+                currentDrawList.appendChild(li);
+            });
+
+            function getRandomName() {
+                return allNames.length ? allNames[Math.floor(Math.random() * allNames.length)] : '';
+            }
+
+            const reelEls = Array.from(document.querySelectorAll('#currentDrawResult .reel'));
+            const baseDuration = 1200; // ms
+            const tick = 60; // ms
+
+            // 统一更新函数：在一次间隔内批量更新所有 reel 的文本（减少重排）
+            function updateRandomBatch() {
+                // 先生成所有随机文本，然后一次写回 DOM
+                const texts = reelEls.map(() => getRandomName());
+                reelEls.forEach((el, i) => {
+                    // 仅在内容不同的情况下写入，减少不必要的 DOM 操作
+                    if (el.textContent !== texts[i]) el.textContent = texts[i];
+                });
+            }
+
+            // 立即做一次更新，避免等待第一个 setInterval 触发造成的“延后闪烁”
+            updateRandomBatch();
+            const intervalId = setInterval(updateRandomBatch, tick);
+
+            // 到时停止滚动并一次性显示最终名单（同步出现）
+            setTimeout(() => {
+                clearInterval(intervalId);
+                reelEls.forEach((el, i) => {
+                    el.textContent = drawn[i] || '';
+                    el.classList.add('selected-final');
+                });
+            }, baseDuration);
+
+            // 更新历史记录
             drawn.forEach(name => drawnNamesHistory.add(name));
 
-            // 6. 显示结果 
-            const resultText = drawn.join('、');
-            currentDrawList.innerHTML = `<li>${resultText}</li>`;
-            
-            // 如果候选人列表清空，给出重置提示
             if (candidatesForNextRound.length === 0 && drawnNamesHistory.size === allNames.length) {
                  errorMessage.textContent = '所有人都已被抽取至少一轮。请点击“重置抽签历史”开始新一轮循环！';
             }
@@ -436,4 +766,3 @@
     </script>
 </body>
 </html>
-
